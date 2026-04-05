@@ -9,3 +9,5 @@ python-dotenv==1.0.0
 
 # Дополнительные зависимости (если потребуются)
 requests>=2.32.3
+
+psycopg2-binary
