@@ -167,9 +167,8 @@ You are not allowed to add to output schema words like 'final answer:' etc, just
     First of all you should understand type of target task - is it gaming or professional task and remember it.
  # CRITICAL OPERATIONAL RULES:
 1. **NO HALLUCINATIONS**: You are FORBIDDEN from using your internal knowledge to suggest PC parts or prices. Everything MUST come from the provided SQL database.
-2. **STRICT SCHEMA ADHERENCE**: Use ONLY the tables and columns defined below (gpus, cpus, motherboards, etc.).
-3. **TOOL-FIRST POLICY**: If a database query fails, DO NOT proceed with estimated values. Report the specific error and attempt to fix the SQL query ONCE. If it fails again, TERMINATE and ask for technical assistance.
-4. **Select GPU based on task, budget and resolution. Remember that model_x_test.resolution is numeric, not string (example: mxt.resolution = 1080). You are not allowed to make the limit in query less than 500.
+2. **TOOL-FIRST POLICY**: If a database query fails, DO NOT proceed with estimated values. Report the specific error and attempt to fix the SQL query ONCE. If it fails again, TERMINATE and ask for technical assistance.
+3. **Select GPU based on task, budget and resolution. Remember that model_x_test.resolution is numeric, not string (example: mxt.resolution = 1080). You are not allowed to make the limit in query less than 500.
 **CODE RULES**:
 - **CONSTANT INJECTION**: You are FORBIDDEN from using variable names (like {min_price}) inside f-strings. 
 - You MUST take the values provided in the "Input" and hardcode them as raw numbers/strings directly into the SQL query before executing it.
@@ -178,69 +177,10 @@ You are not allowed to add to output schema words like 'final answer:' etc, just
 - If you absolutely must use variables, you MUST define them in the first line of your code block: `min_price, max_price = 100000, 150000`.
 You are not allowed to make the limit in query less than 500, replace variables to it's values from input in this query, and use it:
 
-WITH cpu_x_test_prices AS (
-  SELECT
-    c.normalized_model_name,
-    t.test, t.result,
-    p.price_rub,
-    p.source_url,
-    c.tdp,
-    CASE 
-        WHEN c.tdp < 70 THEN 'low'
-        WHEN c.tdp >= 70 AND c.tdp < 121 THEN 'mid'
-        ELSE 'high'
-    END AS tdp_tier,
-    c.socket,
-    c.compatible_chipsets_no_bios_flash
-  FROM cpu_x_test AS t
-  INNER JOIN cpus AS c ON c.id = t.cpu_id
-  INNER JOIN component_prices AS p 
-      ON c.id = p.component_id 
-     AND p.is_available = TRUE 
-     AND p.is_verified = TRUE
-),
-motherboard_prices AS (
-  SELECT
-    m.normalized_name,
-    m.socket,
-    m.chipset,
-    m.vrm_tier,
-    m.form_factor,
-    m.ram_type,
-    m.num_ram_slots,
-    m.cpu_power_pins,
-    m.required_cpu_power_pins,
-    p.price_rub AS mb_price,
-    p.source_url
-  FROM motherboards AS m
-  INNER JOIN component_prices AS p 
-      ON m.id = p.component_id 
-     AND p.is_available = TRUE 
-     AND p.is_verified = TRUE
-)
-SELECT 
-  c.normalized_model_name AS cpu_name,
-  m.normalized_name AS motherboard_name,
-  c.test,
-  c.result,
-  c.price_rub + m.mb_price AS cpu_and_mb_price,
-  c.tdp,
-  m.socket,
-  m.form_factor,
-  m.ram_type,
-  m.num_ram_slots,
-  m.cpu_power_pins,
-  m.required_cpu_power_pins,
-  m.source_url as motherboard_url,
-  c.source_url as cpu_url
-FROM cpu_x_test_prices AS c
-INNER JOIN motherboard_prices AS m 
-    ON c.socket = m.socket
-   AND m.chipset = ANY(c.compatible_chipsets_no_bios_flash)
-   AND m.vrm_tier = c.tdp_tier
-   AND m.ram_type = ram_type
-WHERE (c.price_rub + m.mb_price) BETWEEN min_price AND max_price
-ORDER BY test, cpu_name, motherboard_name
+select * 
+from cpu_and_motherboard_kits
+where ram_type = ram_type and cpu_and_mb_price BETWEEN min_price AND max_price
+limit 9000
 
 Choose only one CPU+MOTHERBOARD from recieved data using this rules:
 If target type of task is gaming and min_price >= 28000, the best choice Ryzen X3D CPUs,
