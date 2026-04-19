@@ -325,7 +325,7 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
 
-<h1>🖥️ PC Builder AI</h1>
+<h1> PC Assembler AI</h1>
 <p class="sub">Опишите задачи и бюджет — система подберёт комплектующие автоматически.</p>
 <p class="sub">Примеры: <em>«собери ПК за 120тр для игр в 1440p»</em>, <em>«нужен комп за 80к для работы с видео»</em></p>
 
@@ -434,3 +434,7 @@ function showSummary(d) {
 </script>
 </body>
 </html>"""
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
