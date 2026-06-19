@@ -23,7 +23,6 @@ dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 loaded = load_dotenv(dotenv_path, override=True, verbose=True)
 litellm.set_debug = False
 
-# ── logging: агентское "говнище" → файл, stdout остаётся чистым ───────────────
 LOG_FILE = "agent_debug.log"
 
 def _setup_logger() -> logging.Logger:
@@ -37,9 +36,6 @@ def _setup_logger() -> logging.Logger:
 
 _log = _setup_logger()
 
-# Smolagents пишет через rich напрямую в stdout — перехватываем на уровне
-# step_callback: каждый шаг агента дополнительно логируем в файл.
-# verbosity_level=0 глушит rich-вывод; шаги всё равно попадают в колбэк.
 def _make_step_callback(agent_name: str):
     def callback(step_log) -> None:
         _log.debug("[%s] %s", agent_name, step_log)
@@ -186,7 +182,7 @@ if __name__ == "__main__":
         gpu_input = f"min_price={min_p}, max_price={max_p}, target_task={task}, target_resolution={res}"
         gpu = _parse_agent_output(agent_gpu.run(gpu_input))
 
-    print(f"✓ GPU:     {gpu.get('normalized_name')}  —  {gpu.get('price_rub')} ₽")
+    print(f"GPU:     {gpu.get('normalized_name')}  —  {gpu.get('price_rub')} ₽")
 
     # ── 3. CPU + Motherboard ──────────────────────────────────────────────────────
     min_p, max_p = budget * RATIO["CPU_MB"][0], budget * RATIO["CPU_MB"][1]
@@ -194,8 +190,8 @@ if __name__ == "__main__":
     cpu_mb = _parse_agent_output(
         agent_cpu_mb.run(f"min_price={min_p}, max_price={max_p}, target_task={task}, ram_type={ddr}")
     )
-    print(f"✓ CPU:     {cpu_mb.get('cpu_name')}")
-    print(f"  MB:      {cpu_mb.get('motherboard_name')}  —  {cpu_mb.get('cpu_and_mb_price')} ₽")
+    print(f"CPU:     {cpu_mb.get('cpu_name')}")
+    print(f"MB:      {cpu_mb.get('motherboard_name')}  —  {cpu_mb.get('cpu_and_mb_price')} ₽")
 
     # ── 4. RAM ────────────────────────────────────────────────────────────────────
     max_p = budget * RATIO["RAM"][1]

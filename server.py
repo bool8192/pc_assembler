@@ -407,7 +407,7 @@ function addStepCard(d) {
 function addErrorCard(d) {
   const el = document.createElement('div');
   el.className = 'step-card';
-  el.innerHTML = `<div class="label">⚠️ Ошибка на шаге ${d.step}</div><div class="err">${d.message}</div>`;
+  el.innerHTML = `<div class="label">Ошибка на шаге ${d.step}</div><div class="err">${d.message}</div>`;
   document.getElementById('steps').appendChild(el);
 }
 
