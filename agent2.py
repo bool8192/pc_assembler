@@ -142,36 +142,12 @@ if __name__ == "__main__":
         ddr="DDR4" if request["budget"] < 200000 else "DDR5",
     )
 
-    # ── 2. GPU ────────────────────────────────────────────────────────────────────
-    min_p, max_p = state.price_bounds(RATIO["GPU"])
-    gpu_list = get_gpu(min_p, max_p, state.task, state.resolution)
-
-    agent_gpu = make_agent(model_ll, prompts["GPU"], name="GPU")
-    gpu_input = f"""
-            gpu_list: {gpu_list},
-            target_resolution: {state.resolution},
-            target_task: {state.task},
-        """
-
-    try:
-        gpu = select_component(
-            agent_gpu,
-            GPU,
-            gpu_input,
-            validation_context={"price_bounds": (min_p, max_p)},
-        )
-        state.add("GPU", gpu)
-    except ComponentSelectionError as e:
-        raise RuntimeError(str(e)) from e
-    print(state.get("GPU"))
-    print(state.remaining, state.spent)
-
     # ── 3. CPU + Motherboard ──────────────────────────────────────────────────────
     min_p, max_p = state.price_bounds(RATIO["CPU_MB"])
     cpu_mb_list = get_cpu_mb(min_p, max_p, state.ddr)
 
     agent_cpu_mb = make_agent(model_ll, prompts["CPU_MB"], name="CPU_MB")
-    cpu_mb_input = cpu_mb_list
+    cpu_mb_input = json.dumps(cpu_mb_list, ensure_ascii=False, indent=2)
 
     try:
         cpu_mb = select_component(

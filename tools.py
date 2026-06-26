@@ -2,6 +2,9 @@ from dotenv import load_dotenv
 from supabase import create_client
 import os
 import json
+import pandas as pd
+import numpy as np
+from sklearn.impute import IterativeImputer
 load_dotenv()
 
 url = os.getenv("url")
@@ -21,6 +24,42 @@ def query_database(sql: str) -> str:
     except Exception as e:
         return f"Database Error: {e}"
 
+def get_cpu_tests_pd(test_name: str | None) -> pd.DataFrame:
+    response = query_database(
+    """
+    SELECT
+    c.normalized_model_name AS cpu_name,
+    t.test,
+    t.result
+    FROM cpu_x_test AS t
+    INNER JOIN cpus AS c
+        ON c.id = t.cpu_id
+    ORDER BY
+        c.normalized_model_name,
+        t.test
+    LIMIT 8000;
+    """)
+    converted_dict = json.loads(response) if response != "[]" else {}
+    df = pd.DataFrame.from_dict(converted_dict)
+    df_wide = df.pivot(
+        index='cpu_name',
+        columns='test',
+        values='result'
+    ).reset_index()
+    df_wide.columns.name = None
+    df_wide['Cinebench R23 Multi core'] = df_wide['Cinebench R23 Multi core']/100
+    df_wide['Cinebench R23 Single core'] = df_wide['Cinebench R23 Single core']/100
+
+    metadata_columns = ['cpu_name']
+    test_columns = [col for col in df_wide.columns if col not in metadata_columns]
+
+    imputer = IterativeImputer(max_iter=10, random_state=42)
+
+    imputed_data = imputer.fit_transform(df_wide[test_columns])
+
+    df_wide[test_columns] = imputed_data
+
+    return df_wide[['cpu_name', test_name]]
 
 def get_cpu_mb(min_p, max_p, ddr):
         tmp_sql = f"""
